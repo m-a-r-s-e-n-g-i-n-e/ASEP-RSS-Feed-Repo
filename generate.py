@@ -5,7 +5,7 @@ import email.utils
 import os
 
 SOURCE_URL = "https://r.jina.ai/http://info.asep.gr/feed.xml"
-OUTPUT_FILE = "docs/feed.xml"
+OUTPUT_FILE = "docs/ASEP-RSS-Feed.xml"
 
 
 def fetch_feed():
