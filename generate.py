@@ -1,101 +1,88 @@
+import re
 import requests
-import xml.etree.ElementTree as ET
 from datetime import datetime
 import email.utils
 import os
-import cloudscraper
 
 SOURCE_URL = "https://r.jina.ai/http://info.asep.gr/feed.xml"
-OUTPUT_FILE = "docs/ASEP-RSS-Feed.xml"
+OUTPUT_FILE = "docs/feed.xml"
 
-
-def parse_date(date_str):
-    """
-    Converts ASEP format:
-    '01/07/2026 - 14:06'
-    into RFC 822 format required by RSS
-    """
-    try:
-        dt = datetime.strptime(date_str.strip(), "%d/%m/%Y - %H:%M")
-        return email.utils.format_datetime(dt)
-    except Exception:
-        return email.utils.format_datetime(datetime.utcnow())
-
-
-import cloudscraper
 
 def fetch_feed():
-    scraper = cloudscraper.create_scraper(
-        browser={
-            "browser": "chrome",
-            "platform": "windows",
-            "mobile": False
-        }
-    )
-
-    r = scraper.get(SOURCE_URL, timeout=30)
-
-    print("Status:", r.status_code)
-    print("Server:", r.headers.get("Server"))
-    print("Content-Type:", r.headers.get("Content-Type"))
-    print("First 500 chars:")
-    print(r.text[:500])
-
+    r = requests.get(SOURCE_URL, timeout=30)
     r.raise_for_status()
     return r.text
 
 
-def build_rss(xml_data):
-    root = ET.fromstring(xml_data)
+def parse_items(text):
+    items = []
 
-    channel_title = "ΑΣΕΠ Ενημερωτική Πύλη"
-    channel_link = "https://info.asep.gr/"
-    channel_description = "Outlook-compatible RSS feed"
+    blocks = text.split("### [")[1:]  # each item starts here
 
-    items_xml = []
+    for b in blocks:
+        try:
+            title_match = re.match(r"(.+?)\]\((https?://[^\)]+)\)", b)
+            if not title_match:
+                continue
 
-    for item in root.findall(".//item"):
-        title = item.findtext("title", "").strip()
-        link = item.findtext("link", "").strip()
-        guid = item.findtext("link", link).strip()
-        pub_date_raw = item.findtext("pubDate", "").strip()
-        category = item.findtext("category", "").strip()
+            title = title_match.group(1).strip()
+            link = title_match.group(2).strip()
 
-        pub_date = parse_date(pub_date_raw)
+            # find date like "01/07/2026 - 14:06"
+            date_match = re.search(r"(\d{2}/\d{2}/\d{4} - \d{2}:\d{2})", b)
+            if date_match:
+                dt = datetime.strptime(date_match.group(1), "%d/%m/%Y - %H:%M")
+            else:
+                dt = datetime.utcnow()
 
-        item_xml = f"""
-        <item>
-            <title>{title}</title>
-            <link>{link}</link>
-            <guid isPermaLink="true">{guid}</guid>
-            <pubDate>{pub_date}</pubDate>
-            <category>{category}</category>
-        </item>
-        """
-        items_xml.append(item_xml)
+            pub_date = email.utils.format_datetime(dt)
 
-    rss = f"""<?xml version="1.0" encoding="UTF-8"?>
+            items.append({
+                "title": title,
+                "link": link,
+                "pubDate": pub_date
+            })
+
+        except Exception:
+            continue
+
+    return items
+
+
+def build_rss(items):
+    xml_items = []
+
+    for it in items:
+        xml_items.append(f"""
+    <item>
+        <title>{it['title']}</title>
+        <link>{it['link']}</link>
+        <guid isPermaLink="true">{it['link']}</guid>
+        <pubDate>{it['pubDate']}</pubDate>
+    </item>
+""")
+
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>{channel_title}</title>
-    <link>{channel_link}</link>
-    <description>{channel_description}</description>
+    <title>ΑΣΕΠ Ενημερωτική Πύλη</title>
+    <link>https://info.asep.gr/</link>
+    <description>RSS feed</description>
     <pubDate>{email.utils.format_datetime(datetime.utcnow())}</pubDate>
-    {''.join(items_xml)}
+    {''.join(xml_items)}
   </channel>
 </rss>
 """
 
-    return rss
 
-
-def save_feed(content):
+def save_feed(xml):
     os.makedirs("docs", exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write(content)
+        f.write(xml)
 
 
 if __name__ == "__main__":
-    xml_data = fetch_feed()
-    rss = build_rss(xml_data)
+    raw = fetch_feed()
+    items = parse_items(raw)
+    rss = build_rss(items)
     save_feed(rss)
