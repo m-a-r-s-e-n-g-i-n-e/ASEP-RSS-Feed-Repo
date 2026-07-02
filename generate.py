@@ -22,6 +22,8 @@ def parse_date(date_str):
         return email.utils.format_datetime(datetime.utcnow())
 
 
+import cloudscraper
+
 def fetch_feed():
     scraper = cloudscraper.create_scraper(
         browser={
@@ -32,6 +34,13 @@ def fetch_feed():
     )
 
     r = scraper.get(SOURCE_URL, timeout=30)
+
+    print("Status:", r.status_code)
+    print("Server:", r.headers.get("Server"))
+    print("Content-Type:", r.headers.get("Content-Type"))
+    print("First 500 chars:")
+    print(r.text[:500])
+
     r.raise_for_status()
     return r.text
 
