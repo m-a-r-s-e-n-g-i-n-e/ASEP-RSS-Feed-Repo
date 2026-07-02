@@ -38,9 +38,9 @@ def parse_items(text):
             pub_date = email.utils.format_datetime(dt)
 
             items.append({
-                "title": title,
-                "link": link,
-                "pubDate": pub_date
+                "title": title.strip(),
+                "link": link.strip(),
+                "pubDate": email.utils.format_datetime(dt)
             })
 
         except Exception:
