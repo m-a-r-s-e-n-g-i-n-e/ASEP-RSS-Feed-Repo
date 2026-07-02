@@ -23,11 +23,9 @@ def parse_date(date_str):
 
 def fetch_feed():
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0 Safari/537.36"
-        )
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/rss+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "el-GR,el;q=0.9,en;q=0.8",
     }
 
     r = requests.get(SOURCE_URL, headers=headers, timeout=30)
