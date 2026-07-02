@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 import email.utils
 import os
+import cloudscraper
 
 SOURCE_URL = "https://info.asep.gr/feed.xml"
 OUTPUT_FILE = "docs/ASEP-RSS-Feed.xml"
@@ -22,13 +23,15 @@ def parse_date(date_str):
 
 
 def fetch_feed():
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "application/rss+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "el-GR,el;q=0.9,en;q=0.8",
-    }
+    scraper = cloudscraper.create_scraper(
+        browser={
+            "browser": "chrome",
+            "platform": "windows",
+            "mobile": False
+        }
+    )
 
-    r = requests.get(SOURCE_URL, headers=headers, timeout=30)
+    r = scraper.get(SOURCE_URL, timeout=30)
     r.raise_for_status()
     return r.text
 
