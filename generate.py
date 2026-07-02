@@ -5,7 +5,7 @@ import email.utils
 import os
 import cloudscraper
 
-SOURCE_URL = "https://info.asep.gr/feed.xml"
+SOURCE_URL = "https://api.allorigins.win/raw?url=https://info.asep.gr/feed.xml"
 OUTPUT_FILE = "docs/ASEP-RSS-Feed.xml"
 
 
