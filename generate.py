@@ -22,7 +22,15 @@ def parse_date(date_str):
 
 
 def fetch_feed():
-    r = requests.get(SOURCE_URL, timeout=30)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0 Safari/537.36"
+        )
+    }
+
+    r = requests.get(SOURCE_URL, headers=headers, timeout=30)
     r.raise_for_status()
     return r.text
 
